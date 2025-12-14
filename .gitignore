@@ -1,1 +1,5 @@
+# My default executable file name to compile fortran
+test
 
+# Modules cache
+*.mod
