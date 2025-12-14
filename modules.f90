@@ -369,7 +369,7 @@ END MODULE
 !===========================================================
 !   Module: Linear interpolation
 !   Purpose: Perform linear interpoolation with two options
-! of extrapolation: linear or constant
+!   of extrapolation: linear or constant
 !===========================================================
 
 MODULE linear_interpolation
@@ -509,3 +509,65 @@ CONTAINS
         END DO
     END SUBROUTINE cramer_rule
 END MODULE linear_system
+
+!===========================================================
+!   Module: Linear fit
+!   Purpose: Perform linear fit for one or two dimensional
+!   variable
+!===========================================================
+
+MODULE linear_fit
+    USE matrix_operator
+    USE linear_system
+    IMPLICIT NONE
+CONTAINS
+
+    SUBROUTINE linear_fit_2d (x, y, b1, b2)
+        REAL, DIMENSION(:), INTENT(IN) :: x, y
+        REAL, INTENT(OUT) :: b1, b2
+        INTEGER :: n
+        REAL, DIMENSION(2, 2) :: a ! Coefficient matrix
+        REAL, DIMENSION(2) :: x_sol, b ! Solution vectors
+        
+        ! Data size
+        n = SIZE(x)
+
+        ! Prepare coefficient matrix to the linear system
+        a(1, 1) = n
+        a(1, 2) = SUM(x)
+        a(2, 1) = a(1, 2)
+        a(2, 2) = SUM(x**2)
+
+        ! Prepare the right hand side of the linear system
+        b(1) = SUM(y)
+        b(2) = SUM(x * y)
+        
+        ! Solve the linear system to find fit parameters
+        CALL cramer_rule (a, b, x_sol)
+        b1 = x_sol(1)
+        b2 = x_sol(2)
+    END SUBROUTINE linear_fit_2d
+
+    SUBROUTINE quality_fit (x, y, b1, b2, std_1, std_2, r_sq)
+        REAL, DIMENSION(:), INTENT(IN) :: x, y
+        REAL, INTENT(IN) :: b1, b2
+        REAL, INTENT(OUT) :: std_1, std_2, r_sq
+        REAL :: var, x_bar, y_bar
+        INTEGER :: n
+        
+        ! Data size
+        n = SIZE(x)
+
+        ! Compute R^2
+        y_bar = (SUM(y) / n)
+        r_sq = 1 - SUM((y - (b1 + b2 * x)) ** 2) &
+               / SUM((y - y_bar)**2)
+
+        ! Compute standard errors
+        var = SUM((y - (b1 + b2 * x))**2 / (n-2))
+        x_bar = (SUM(x) / n)
+        std_1 = SQRT(var) * SQRT(1/n + (x_bar**2 / SUM((x - x_bar)**2)))
+        std_2 = SQRT(var) / SQRT( SUM( (x - x_bar)**2 ) )
+    END SUBROUTINE quality_fit
+    
+END MODULE linear_fit
