@@ -36,4 +36,11 @@ PROGRAM stats
     WRITE(unit_num, '(3a10)') 'MEAN', 'STD', '98PCT' 
     WRITE(unit_num, '(3f10.3)') avg, std, per_98
     CLOSE(unit_num)
+
+    ! Write output, by following requested format
+    OPEN(UNIT=unit_num, FILE='./output/stats_2023.dat', STATUS='replace', ACTION='write')
+    WRITE(unit_num, *) '# THIS IS COMPUTED FROM SAMPLE/DAT'
+    WRITE(unit_num, '(3a10)') 'MEAN', 'VAR', '90PCT' 
+    WRITE(unit_num, '(3f10.3)') avg, std ** 2, percentile(90.0, vec)
+    CLOSE(unit_num)
 END PROGRAM stats
