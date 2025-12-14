@@ -365,3 +365,106 @@ CONTAINS
         CALL SECANT(a, b, eps)
     END SUBROUTINE
 END MODULE
+
+!===========================================================
+!   Module: Linear interpolation
+!   Purpose: Perform linear interpoolation with two options
+! of extrapolation: linear or constant
+!===========================================================
+
+MODULE linear_interpolation
+    IMPLICIT NONE
+CONTAINS
+    ! This is a function to perform interpolation for a single predictor
+    ! Assumption: the predictor is in range with the data
+    REAL FUNCTION interpolate (vec_t, vec_m, t_new) RESULT(res)
+        REAL, DIMENSION(:), INTENT(IN) :: vec_t, vec_m
+        REAL, INTENT(IN) :: t_new
+        INTEGER :: n, i
+        
+        ! Data size
+        n = SIZE(vec_t)
+
+        ! Find index such that t_new is in between vec_t(i) and vec_t(i+1)
+        i = 1
+        DO
+            IF ((t_new >= vec_t(i)) .AND. (t_new <= vec_t(i+1))) EXIT
+            i = i + 1
+        END DO 
+
+        ! Perform interpolation
+        res = vec_m(i) + (vec_m(i+1) - vec_m(i)) / (vec_t(i+1) - vec_t(i)) * (t_new - vec_t(i))
+    END FUNCTION interpolate
+
+    ! This is a function to perform extrapolation (constant method) for a single predictor
+    ! Assumption: the predictor is out of range with the data or the same as the bounds
+    REAL FUNCTION extrapolate_constant (vec_t, vec_m, t_new) RESULT(res)
+        REAL, DIMENSION(:), INTENT(IN) :: vec_t, vec_m
+        REAL, INTENT(IN) :: t_new
+        INTEGER :: n
+
+        ! Data size
+        n = SIZE(vec_t)
+
+        ! Perform extrapolation by checking t_new location
+        IF (t_new >= vec_t(n)) THEN
+            res = vec_m(n)
+        ELSE
+            res = vec_m(1)
+        END IF
+    END FUNCTION extrapolate_constant
+
+    ! This is a function to perform extrapolation (linear method) for a single predictor
+    ! Assumption: the predictor is out of range with the data or the same as the bounds
+    REAL FUNCTION extrapolate_linear (vec_t, vec_m, t_new) RESULT(res)
+        REAL, DIMENSION(:), INTENT(IN) :: vec_t, vec_m
+        REAL, INTENT(IN) :: t_new
+        INTEGER :: n
+
+        ! Data sizet
+        n = SIZE(vec_t)
+
+        ! Inputs: first two starting time, last two
+        IF (t_new >= vec_t(n)) THEN
+            res = vec_m(n) + (vec_m(n) - vec_m(n-1)) / (vec_t(n) - vec_t(n-1)) * (t_new - vec_t(n))
+        ELSE
+            res = vec_m(1) + (vec_m(2) - vec_m(1)) / (vec_t(2) - vec_t(1)) * (t_new - vec_t(1))
+        END IF
+    END FUNCTION extrapolate_linear
+
+    SUBROUTINE linear_interpolation_constant_extrapolation (vec_t, vec_m, vec_t_new, vec_m_new)
+        REAL, DIMENSION(:), INTENT(IN) :: vec_t, vec_m, vec_t_new
+        REAL, DIMENSION(:), INTENT(OUT) :: vec_m_new
+        INTEGER :: n, i
+
+        ! Data size
+        n = SIZE(vec_t)
+
+        ! Perform extrapolation
+        DO i = 1, n
+            IF (vec_t_new(i) <= vec_t(1) .OR. vec_t_new(i) >= vec_t(n)) THEN ! Case 1: Extrapolation for values outside of data range
+                vec_m_new(i) = extrapolate_constant(vec_t, vec_m, vec_t_new(i))
+            ELSE ! Case 2: Perform interpolation
+                vec_m_new(i) = interpolate(vec_t, vec_m, vec_t_new(i))
+            END IF
+        END DO
+    END SUBROUTINE linear_interpolation_constant_extrapolation
+
+    SUBROUTINE linear_interpolation_linear_extrapolation (vec_t, vec_m, vec_t_new, vec_m_new)
+        REAL, DIMENSION(:), INTENT(IN) :: vec_t, vec_m, vec_t_new
+        REAL, DIMENSION(:), INTENT(OUT) :: vec_m_new
+        INTEGER :: n, i
+
+        ! Data size
+        n = SIZE(vec_t)
+
+        ! Perform extrapolation
+        DO i = 1, n
+            IF (vec_t_new(i) <= vec_t(1) .OR. vec_t_new(i) >= vec_t(n)) THEN ! Case 1: Extrapolation for values outside of data range
+                vec_m_new(i) = extrapolate_linear(vec_t, vec_m, vec_t_new(i))
+            ELSE ! Case 2: Perform interpolation
+                vec_m_new(i) = interpolate(vec_t, vec_m, vec_t_new(i))
+            END IF
+        END DO
+    END SUBROUTINE linear_interpolation_linear_extrapolation
+END MODULE linear_interpolation
