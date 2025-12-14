@@ -100,6 +100,20 @@ CONTAINS
         ! BONUS: Ensure matrix is square
         IF (n**2 /= SIZE(mat)) STOP 'Inputted matrix has to be square!'    
     END SUBROUTINE check_matrix
+
+    FUNCTION inverse_2d (mat) RESULT(mat_out)
+        REAL, DIMENSION(2, 2), INTENT(IN) :: mat
+        REAL, DIMENSION(2, 2) :: mat_out
+
+        ! Construct adjoint matrix
+        mat_out(1, 1) = mat(2, 2)
+        mat_out(1, 2) = -1.0 * mat(1, 2)
+        mat_out(2, 1) = -1.0 * mat(2, 1)
+        mat_out(2, 2) = mat(1, 1)
+
+        ! Final computation
+        mat_out = mat_out / determinant(mat)
+    END FUNCTION inverse_2d
 END MODULE matrix_operator
 
 !===========================================================
@@ -571,3 +585,91 @@ CONTAINS
     END SUBROUTINE quality_fit
     
 END MODULE linear_fit
+
+
+!===========================================================
+!   Module: Non-linear fit
+!   Purpose: Perform non-linear fit for one or two dimensional
+!   variable
+!===========================================================
+
+MODULE nonlinear_fit
+    USE matrix_operator
+    USE linear_system
+    IMPLICIT NONE
+CONTAINS
+
+    ! Regression model function
+    REAL FUNCTION f (x, b1, b2) RESULT(res)
+        REAL, INTENT(IN) :: x, b1, b2
+
+        res = b1 / (x**5 * (EXP(b2/x) - 1))
+    END FUNCTION f
+
+    ! Partial derivative of the function to beta_1
+    REAL FUNCTION df_db1 (x, b1, b2) RESULT(res)
+        REAL, INTENT(IN) :: x, b1, b2
+
+        res = 1 / (x**5 * (EXP(b2/x) - 1))
+    END FUNCTION df_db1
+
+    ! Partial derivative of the function to beta_2
+    REAL FUNCTION df_db2 (x, b1, b2) RESULT(res)
+        REAL, INTENT(IN) :: x, b1, b2
+
+        res = -1.0 * (b1 * EXP(b2 / x)) &
+            / (x**6 * (EXP(b2/x) - 1)**2)
+    END FUNCTION df_db2 
+
+    SUBROUTINE nonlinear_fit_2d (x, y, alpha, b1, b2, delta_b, se1, se2)
+        REAL, DIMENSION(:), INTENT(IN) :: x, y
+        REAL, INTENT(IN) :: alpha
+        REAL, INTENT(INOUT) :: b1, b2
+        REAL, INTENT(OUT) :: se1, se2
+        REAL, DIMENSION(2), INTENT(INOUT) :: delta_b
+        INTEGER :: n, i ! Data size and looping index
+        REAL, DIMENSION(:, :), ALLOCATABLE :: jac ! Jacobian matrix
+        REAL, DIMENSION(:), ALLOCATABLE :: r ! Residual vector
+        REAL :: var ! Variance of error
+        REAL, DIMENSION(2, 2) :: se ! Std. errors for fit parameters
+        
+        ! Data size
+        n = SIZE(x)
+        ALLOCATE(r(n))
+        ALLOCATE(jac(n, 2))
+
+        ! Construct residuals vector
+        DO i = 1, n
+            r(i) = y(i) - f(x(i), b1, b2)
+        END DO
+
+        ! Construct Jacobian matrix
+        DO i = 1, n
+            jac(i, 1) = df_db1(x(i), b1, b2)
+            jac(i, 2) = df_db2(x(i), b1, b2)
+        END DO
+
+        ! Find descent direction
+        CALL cramer_rule (MATMUL(TRANSPOSE(jac), jac), &
+            MATMUL(TRANSPOSE(jac), r), &
+            delta_b)
+
+        ! Update fit parameters
+        b1 = b1 + alpha * delta_b(1)
+        b2 = b2 + alpha * delta_b(2) 
+
+        ! Compute variance of error
+        var = 0
+        DO i = 1, n
+            var = var + (y(i) - f(x(i), b1, b2)) ** 2
+        END DO
+        var = var / (n - 2)
+
+        ! Compute standard errors of fit parameters
+        se = var * inverse_2d(MATMUL(TRANSPOSE(jac), jac))
+
+        ! Compute standard deviation
+        se1 = SQRT(se(1, 1))
+        se2 = SQRT(se(2, 2))
+    END SUBROUTINE nonlinear_fit_2d
+END MODULE nonlinear_fit
