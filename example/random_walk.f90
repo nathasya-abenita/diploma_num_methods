@@ -1,11 +1,7 @@
 MODULE random_walk_module
+    USE matrix_operator
     IMPLICIT NONE
 CONTAINS
-    REAL FUNCTION average(x) RESULT(res)
-        REAL, DIMENSION(:), INTENT(IN) :: x
-        res = SUM(x) / SIZE(x)
-    END FUNCTION average
-
     SUBROUTINE random_walk (x)
         REAL, DIMENSION(:), INTENT(INOUT) :: x
         INTEGER :: i ! Looping index
