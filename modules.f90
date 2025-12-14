@@ -470,9 +470,8 @@ CONTAINS
 END MODULE linear_interpolation
 
 !===========================================================
-!   Module: Linear interpolation
-!   Purpose: Perform linear interpoolation with two options
-! of extrapolation: linear or constant
+!   Module: Linear system
+!   Purpose: Solve linear system by using Cramer rule
 !===========================================================
 
 MODULE linear_system
