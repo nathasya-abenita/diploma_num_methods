@@ -75,7 +75,7 @@ PROGRAM simulate_random_walk
     END DO
 
     ! Print output
-    OPEN (UNIT=unit_num, FILE='clt.txt', STATUS='replace', ACTION='write')
+    OPEN (UNIT=unit_num, FILE='./output/clt.txt', STATUS='replace', ACTION='write')
         WRITE(unit_num, *) output_arr
     CLOSE(unit_num)
 
@@ -88,7 +88,7 @@ PROGRAM simulate_random_walk
     CALL random_walks(walk_positions)
     
     ! Prepare output
-    OPEN (UNIT=unit_num, FILE='position.txt', STATUS='replace', ACTION='write')
+    OPEN (UNIT=unit_num, FILE='./output/position.txt', STATUS='replace', ACTION='write')
         DO i = 1, n_step
             WRITE(unit_num, *) walk_positions(:, i)
         END DO
@@ -104,7 +104,7 @@ PROGRAM simulate_random_walk
     CALL random_walks(walk_positions)
     
     ! Prepare output
-    OPEN (UNIT=unit_num, FILE='last_position.txt', STATUS='replace', ACTION='write')
+    OPEN (UNIT=unit_num, FILE='./output/last_position.txt', STATUS='replace', ACTION='write')
         ! Write only the last position
         WRITE(unit_num, *) walk_positions(:, n_step)
     CLOSE(unit_num)
@@ -113,7 +113,7 @@ PROGRAM simulate_random_walk
     ! squared displacements
 
     ! Prepare output
-    OPEN (UNIT=unit_num, FILE='mean_positions.txt', STATUS='replace', ACTION='write')
+    OPEN (UNIT=unit_num, FILE='./output/mean_positions.txt', STATUS='replace', ACTION='write')
         DO i = 1, n_step
             ! First column: average of position
             ! Second column: msd
