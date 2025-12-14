@@ -526,8 +526,7 @@ END MODULE linear_system
 
 !===========================================================
 !   Module: Linear fit
-!   Purpose: Perform linear fit for one or two dimensional
-!   variable
+!   Purpose: Perform linear fit for one dimensional function
 !===========================================================
 
 MODULE linear_fit
@@ -589,8 +588,8 @@ END MODULE linear_fit
 
 !===========================================================
 !   Module: Non-linear fit
-!   Purpose: Perform non-linear fit for one or two dimensional
-!   variable
+!   Purpose: Perform non-linear fit with two dimensional
+!   function
 !===========================================================
 
 MODULE nonlinear_fit
