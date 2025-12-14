@@ -3,3 +3,6 @@ test
 
 # Modules cache
 *.mod
+
+# Default output/result file
+output
