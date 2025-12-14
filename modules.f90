@@ -931,3 +931,63 @@ CONTAINS
         END DO
     END SUBROUTINE verlet_method_2d
 END MODULE diff_equation
+
+!===========================================================
+!   Module: Random numbers simulation
+!   Purpose: Generate from certain distribution
+!===========================================================
+
+MODULE random_numbers
+    USE matrix_operator
+    IMPLICIT NONE
+CONTAINS
+    REAL FUNCTION inverse_cdf_1 (x) RESULT(res)
+        REAL, INTENT(IN) :: x
+
+        res = -1 - 2 / (x - 2)
+    END FUNCTION inverse_cdf_1
+
+    REAL FUNCTION inverse_cdf_2 (x) RESULT(res)
+        REAL, INTENT(IN) :: x
+
+        res = x ** (1.0 / 3)
+    END FUNCTION inverse_cdf_2
+
+    SUBROUTINE apply_box_muller (z1, z2, m, s)
+        REAL, DIMENSION(:), INTENT(INOUT) :: z1, z2
+        REAL, DIMENSION(:), ALLOCATABLE :: u1, u2
+        REAL, INTENT(IN) :: m, s ! Mean and variance
+        INTEGER :: i ! Looping index
+        REAL :: pi ! Pi number
+
+        pi = 4.0 * ATAN(1.0)
+
+        ! Allocate array based on size input
+        ALLOCATE(u1(SIZE(z1)))
+        ALLOCATE(u2(SIZE(z1)))
+
+        ! Generate uniform numbers
+        CALL RANDOM_NUMBER(u1) 
+        CALL RANDOM_NUMBER(u2)
+
+        ! Apply Box-Muller method
+        DO i = 1, SIZE(z1)
+            z1(i) = SQRT( -2 * LOG(u1(i)) ) * COS(2 * pi * u2(i))
+            z2(i) = SQRT( -2 * LOG(u1(i)) ) * SIN(2 * pi * u2(i))
+        END DO
+
+        ! Distribution shift
+        z1 = SQRT(s) * z1 + m
+        z2 = SQRT(s) * z2 + m
+
+    END SUBROUTINE apply_box_muller
+
+    SUBROUTINE write_output (dat, file_name)
+        REAL, DIMENSION(:), INTENT(IN) :: dat
+        CHARACTER(LEN=*), INTENT(IN) :: file_name
+
+        OPEN (UNIT=11, FILE=file_name, STATUS='replace', ACTION='write')
+            WRITE(11, *) dat
+        CLOSE(11)
+    END SUBROUTINE write_output
+END MODULE random_numbers
