@@ -101,3 +101,80 @@ CONTAINS
         IF (n**2 /= SIZE(mat)) STOP 'Inputted matrix has to be square!'    
     END SUBROUTINE check_matrix
 END MODULE matrix_operator
+
+!===========================================================
+!   Module: Read file
+!   Purpose: Basic file reading
+!===========================================================
+
+MODULE read_file
+    IMPLICIT NONE
+CONTAINS
+    SUBROUTINE read_flexible (file_name, mat, n_col, n_row)
+        CHARACTER(LEN=1) :: first_char
+        CHARACTER(LEN=80) :: line
+        INTEGER :: unit_num = 11
+        INTEGER :: i, err, n_trim ! Counter variables
+        INTEGER :: row_start = 0 ! Starting line
+        
+        CHARACTER(LEN=*), INTENT(IN) :: file_name
+        REAL, DIMENSION(:, :), ALLOCATABLE, INTENT(INOUT) :: mat
+        INTEGER, INTENT(OUT) :: n_col, n_row
+
+        ! Initialize number of rows and columns
+        n_col = 0
+        n_row = 0
+
+        ! Open file
+        OPEN(UNIT=unit_num, FILE=file_name, STATUS='old', ACTION='read')
+
+        ! Reading number of comment lines in header
+        DO
+            READ(unit_num, *, iostat=err) first_char
+
+            IF (first_char == '#') THEN
+                row_start = row_start + 1
+            ELSE
+                EXIT
+            END IF
+        END DO
+        PRINT*, 'Start line (without header):', row_start
+
+        ! Reading number of rows, ignoring hash symbol, and saving information
+        REWIND(unit_num)
+        DO
+            READ(unit_num, *, iostat=err) first_char
+            IF (err /= 0) EXIT
+            IF (first_char /= '#') n_row = n_row + 1
+        END DO
+        PRINT*, 'Number of rows:', n_row
+        
+        ! Reading number of columns
+        REWIND(unit_num)
+        READ(unit_num, '(A)') line
+        n_trim = LEN_TRIM(line) ! Remove trailing whitespace
+        DO i = 1, n_trim - 1
+            IF (line(i: i+1) == '  ') n_col = n_col + 1 ! Find number of seperator
+        END DO
+        PRINT*, 'Number of col.:', n_col
+        
+        ! Define data variable size
+        ALLOCATE(mat(n_row, n_col))
+
+        ! Prepare to read file by skipping header lines
+        REWIND(unit_num)
+        IF (row_start > 0) THEN
+            DO i = 1, row_start
+                READ(unit_num, *)
+            END DO
+        END IF
+
+        ! Read file
+        DO i = 1, n_row
+            READ(unit_num, *) mat(i, :)
+        END DO
+
+        ! Close file    
+        CLOSE(unit_num)
+    END SUBROUTINE
+END MODULE read_file
