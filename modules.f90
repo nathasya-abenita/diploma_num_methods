@@ -277,13 +277,15 @@ CONTAINS
     ! Function in which the root will be found
     REAL FUNCTION func_f (x) RESULT(f)
         REAL(rpm), INTENT(IN) :: x
-        !f = x**5 + 3*x**4 - 2*x**2 - LOG(x**2) - 2
-        f = COS(x) - LOG(x) + 1
+        ! f = x**5 + 3*x**4 - 2*x**2 - LOG(x**2) - 2
+        ! f = COS(x) - LOG(x) + 1
+        f = x**2 - 6*x - LOG(x) - 4
     END FUNCTION func_f
 
     REAL FUNCTION func_f_prime (x) RESULT(f)
         REAL(rpm), INTENT(IN) :: x
-        f = -1.0 * SIN(x) - (1.0 / x) 
+        ! f = -1.0 * SIN(x) - (1.0 / x) 
+        f = 2*x - 6 - 1/x
     END FUNCTION func_f_prime
 
     SUBROUTINE bisection (a, b, eps)
@@ -754,8 +756,59 @@ CONTAINS
     REAL FUNCTION f (x) RESULT(res)
         REAL, INTENT(IN) :: x
 
-        res = (16*x - 16) / (x**4 - 2*x**3 + 4*x - 4)
+        ! res = (16*x - 16) / (x**4 - 2*x**3 + 4*x - 4)
+        res = SIN(x) * EXP(-1.0 * x)
     END FUNCTION f
+
+    ! Gauss-Legendre quadrature method
+
+    REAL FUNCTION approx_int_gauss_leg(a, b, n) RESULT(res)
+        REAL, INTENT(IN) :: a, b ! Integration bounds
+        INTEGER, INTENT(IN) :: n ! Number of partition
+        REAL :: h ! Partition width
+        REAL :: p1, p2 ! Weight
+        INTEGER :: i ! Looping index
+
+        ! Define weight
+        p1 = 0.5 + 0.5 / SQRT(3.0)
+        p2 = 0.5 - 0.5 / SQRT(3.0)
+
+        ! Compute partition width
+        h = (b - a) / n
+
+        ! Apply trapezoidal formula
+        res = 0
+        DO i = 0, n - 1
+            res = res + f(a + i*h + p1*h) + f(a + i*h + p2*h)
+        END DO
+        res = res * h / 2
+    END FUNCTION approx_int_gauss_leg
+
+    REAL FUNCTION int_gauss_leg(a, b, eps) RESULT(res)
+        REAL, INTENT(IN) :: a, b, eps ! Integration parameters
+        INTEGER :: n = 2 ! Initial value for number of partitions
+        REAL :: res_old ! Old approximation
+
+        ! Compute initial approximation of integration
+        res_old = approx_int_gauss_leg(a, b, n)
+        ! Loop until convergence is met
+        DO
+            ! Increase number of partitions
+            n = 2*n
+
+            ! Compute new approximation
+            res = approx_int_gauss_leg(a, b, n)
+
+            ! Print info
+            PRINT*, '(N, integration) =', n, res, ABS(res - res_old)
+
+            ! Exit loop when convergence is met
+            IF (ABS(res - res_old) < eps) EXIT
+
+            ! Update approximation
+            res_old = res
+        END DO
+    END FUNCTION int_gauss_leg
 
     ! Trapezoidal method
 
