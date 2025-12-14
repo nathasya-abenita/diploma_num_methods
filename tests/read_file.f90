@@ -2,8 +2,6 @@ PROGRAM file_average
     USE matrix_operator
     USE read_file
     IMPLICIT NONE
-    CHARACTER(LEN=1) :: first_char
-    CHARACTER(LEN=80) :: line, file_name
     INTEGER :: unit_num = 11
     INTEGER :: i
     INTEGER :: n_col ! Number of columns
