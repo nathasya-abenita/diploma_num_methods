@@ -1,11 +1,80 @@
 !===========================================================
+!   Module: Sorter
+!===========================================================
+
+module module_sorter
+  implicit none
+  private
+
+  public :: quicksort
+
+  contains
+
+  recursive subroutine quicksort(a)
+    real, dimension(:), intent(inout) :: a
+    integer :: p
+    if (size(a) == 0) return
+    p = partition(a)
+    call quicksort(a(:p-1))
+    call quicksort(a(p+1:))
+  end subroutine quicksort
+
+  integer function partition(a) result(i)
+    real, dimension(:), intent(inout) :: a
+    integer :: j
+    i = 1
+    do j = 1, size(a)
+        if (a(j) < a(size(a))) then
+            call swap(a(i), a(j))
+            i = i + 1
+        end if
+    end do
+    call swap(a(i), a(size(a)))
+  end function partition
+
+  elemental subroutine swap(a, b)
+    real, intent(inout) :: a, b
+    real :: temp
+    temp = a
+    a = b
+    b = temp
+  end subroutine swap
+
+end module module_sorter
+
+!===========================================================
 !   Module: Matrix Operator
 !   Purpose: Basic functions relating to array and matrices
 !===========================================================
 
 MODULE matrix_operator
+    USE module_sorter
     IMPLICIT NONE
 CONTAINS
+    REAL FUNCTION percentile(percentage, vec_input) RESULT(res)
+        REAL, INTENT(IN) :: percentage
+        REAL, DIMENSION(:), INTENT(IN) :: vec_input
+        REAL, DIMENSION(:), ALLOCATABLE :: vec
+        REAL :: idx
+        INTEGER :: idx_int
+
+        ! Sort vector
+        ALLOCATE(vec(SIZE(vec_input)))
+        vec = vec_input
+        CALL quicksort(vec)
+
+        ! Compute the index or position of the number
+        idx = REAL(SIZE(vec)) * percentage / 100.0
+        idx_int = INT(idx)
+
+        ! Compute the percentile
+        res = vec(idx_int) + (idx - idx_int * 1.0) * &
+            (vec(idx_int + 1) - vec(idx_int))
+        
+        ! Deallocate for memory efficiency
+        DEALLOCATE(vec)
+    END FUNCTION percentile
+
     REAL FUNCTION average(arr) RESULT(avg)
         REAL, DIMENSION (:), INTENT(IN) :: arr ! one-dimensional input
         INTEGER :: n ! Size variable
@@ -991,47 +1060,3 @@ CONTAINS
         CLOSE(11)
     END SUBROUTINE write_output
 END MODULE random_numbers
-
-!===========================================================
-!   Module: Sorter
-!===========================================================
-
-module module_sorter
-  implicit none
-  private
-
-  public :: quicksort
-
-  contains
-
-  recursive subroutine quicksort(a)
-    real, dimension(:), intent(inout) :: a
-    integer :: p
-    if (size(a) == 0) return
-    p = partition(a)
-    call quicksort(a(:p-1))
-    call quicksort(a(p+1:))
-  end subroutine quicksort
-
-  integer function partition(a) result(i)
-    real, dimension(:), intent(inout) :: a
-    integer :: j
-    i = 1
-    do j = 1, size(a)
-        if (a(j) < a(size(a))) then
-            call swap(a(i), a(j))
-            i = i + 1
-        end if
-    end do
-    call swap(a(i), a(size(a)))
-  end function partition
-
-  elemental subroutine swap(a, b)
-    real, intent(inout) :: a, b
-    real :: temp
-    temp = a
-    a = b
-    b = temp
-  end subroutine swap
-
-end module module_sorter
