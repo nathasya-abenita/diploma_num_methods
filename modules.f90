@@ -468,3 +468,45 @@ CONTAINS
         END DO
     END SUBROUTINE linear_interpolation_linear_extrapolation
 END MODULE linear_interpolation
+
+!===========================================================
+!   Module: Linear interpolation
+!   Purpose: Perform linear interpoolation with two options
+! of extrapolation: linear or constant
+!===========================================================
+
+MODULE linear_system
+    USE matrix_operator
+    IMPLICIT NONE
+CONTAINS
+    SUBROUTINE cramer_rule (a_in, b, x)
+        REAL, DIMENSION(:, :), INTENT(IN) :: a_in
+        REAL, DIMENSION(:, :), ALLOCATABLE :: a ! Coefficient matrix that its i-column will be updated according to solution x_i
+        REAL, DIMENSION(:), INTENT(IN) :: b
+        REAL, DIMENSION(:), INTENT(OUT) :: x
+        INTEGER :: i, n ! Looping index and matrix size
+        REAL :: det_a
+
+        ! Compute matrix size and coefficient matrix determinant
+        n = SIZE(b)
+        det_a = determinant(a_in)
+
+        ! Stop program if determinant is zero
+        IF (det_a == 0) STOP "The determinant of the coefficient matrix is zero!"
+
+        ! Allocate matrix size for the coefficient matrix
+        ALLOCATE(a(n, n))
+
+        ! Loop over column index
+        DO i = 1, n
+            ! Initialize coefficient matrix
+            a = a_in
+
+            ! Prepare updated coefficient matrix
+            a(:, i) = b
+
+            ! Compute the solution
+            x(i) = determinant(a) / det_a
+        END DO
+    END SUBROUTINE cramer_rule
+END MODULE linear_system
