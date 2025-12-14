@@ -585,7 +585,6 @@ CONTAINS
     
 END MODULE linear_fit
 
-
 !===========================================================
 !   Module: Non-linear fit
 !   Purpose: Perform non-linear fit with two dimensional
@@ -672,3 +671,263 @@ CONTAINS
         se2 = SQRT(se(2, 2))
     END SUBROUTINE nonlinear_fit_2d
 END MODULE nonlinear_fit
+
+!===========================================================
+!   Module: Integration
+!   Purpose: Utilize trapezoidal and simpson methods
+!===========================================================
+
+MODULE integration
+    IMPLICIT NONE
+CONTAINS
+    ! Function to be integrated
+
+    REAL FUNCTION f (x) RESULT(res)
+        REAL, INTENT(IN) :: x
+
+        res = (16*x - 16) / (x**4 - 2*x**3 + 4*x - 4)
+    END FUNCTION f
+
+    ! Trapezoidal method
+
+    REAL FUNCTION approx_int_trapezoid(a, b, n) RESULT(res)
+        REAL, INTENT(IN) :: a, b ! Integration bounds
+        INTEGER, INTENT(IN) :: n ! Number of partition
+        REAL :: h ! Partition width
+        INTEGER :: i ! Looping index
+
+        ! Compute partition width
+        h = (b - a) / n
+
+        ! Apply trapezoidal formula
+        res = 0
+        DO i = 0, n - 1
+            res = res + f(a + i*h) + f(a + (i+1)*h)
+        END DO 
+        res = res * h / 2
+    END FUNCTION approx_int_trapezoid
+
+    REAL FUNCTION int_trapezoid(a, b, eps) RESULT(res)
+        REAL, INTENT(IN) :: a, b, eps ! Integration parameters
+        INTEGER :: n = 32 ! Initial value for number of partitions
+        REAL :: res_old ! Old approximation
+
+        ! Compute initial approximation of integration
+        res_old = approx_int_trapezoid(a, b, n)
+        ! Loop until convergence is met
+        DO
+            ! Increase number of partitions
+            n = 2*n
+
+            ! Compute new approximation
+            res = approx_int_trapezoid(a, b, n)
+
+            ! Print info
+            PRINT*, '(N, integration) =', n, res, ABS(res - res_old)
+
+            ! Exit loop when convergence is met
+            IF (ABS(res - res_old) < eps) EXIT
+
+            ! Update approximation
+            res_old = res
+        END DO
+    END FUNCTION int_trapezoid
+
+    ! Simpson method
+
+    REAL FUNCTION approx_int_simpson(a, b, n) RESULT(res)
+        REAL, INTENT(IN) :: a, b ! Integration bounds
+        INTEGER, INTENT(IN) :: n ! Number of partition
+        REAL :: h ! Partition width
+        INTEGER :: i ! Looping index
+
+        ! Compute partition width
+        h = (b - a) / n
+
+        ! Apply Simpson method formula
+        res = 0
+        DO i = 0, n - 1
+            res = res + f(a + i*h) + f(a + (i+1)*h) + &
+            4 * f((2*a + (2*i+1)*h)/2)
+        END DO 
+        res = res * h / 6
+    END FUNCTION approx_int_simpson
+
+    REAL FUNCTION int_simpson(a, b, eps) RESULT(res)
+        REAL, INTENT(IN) :: a, b, eps ! Integration parameters
+        INTEGER :: n = 2 ! Initial value for number of partitions
+        REAL :: res_old ! Old approximation
+
+        ! Compute initial approximation of integration
+        res_old = approx_int_simpson(a, b, n)
+        ! Loop until convergence is met
+        DO
+            ! Increase number of partitions
+            n = 2*n
+
+            ! Compute new approximation
+            res = approx_int_simpson(a, b, n)
+
+            ! Print info
+            PRINT*, '(N, integration) =', n, res
+
+            ! Exit loop when convergence is met
+            IF (ABS(res - res_old) < eps) EXIT
+
+            ! Update approximation
+            res_old = res
+        END DO
+    END FUNCTION int_simpson
+END MODULE integration
+
+!===========================================================
+!   Module: Solve differential equation - One-dimensional 
+!   function
+!   Purpose: 
+!===========================================================
+
+
+MODULE diff_equation
+    IMPLICIT NONE
+CONTAINS
+
+    ! Functions corresponding to the diff. equation system
+
+    REAL FUNCTION fx(t, x, y) RESULT(res)
+        REAL, INTENT(IN) :: t, x, y ! Function input
+        res = y
+    END FUNCTION fx
+
+    REAL FUNCTION fy(t, x, y) RESULT(res)
+        REAL, INTENT(IN) :: t, x, y ! Function input
+        res = -1.0 * SIN(x)
+    END FUNCTION fy
+
+    ! Euler method
+
+    SUBROUTINE euler_method_1d (t0, x0, y0, delta_t, n, t, x, y)
+        REAL, INTENT(IN) :: t0, x0, y0, delta_t
+        INTEGER, INTENT(IN) :: n
+        REAL, DIMENSION(:), INTENT(OUT) :: t, x, y ! Dimension is n + 1
+        INTEGER :: i ! Looping index
+
+        ! Set initial condition
+        x(1) = x0
+        y(1) = y0
+        t(1) = t0
+
+        ! Apprximate next steps with Euler method
+        DO i = 1, n ! Repeat N times
+            t(i + 1) = t(i) + delta_t
+            x(i + 1) = x(i) + delta_t * fx(t(i), x(i), y(i))
+            y(i + 1) = y(i) + delta_t * fy(t(i), x(i), y(i))
+        END DO
+    END SUBROUTINE euler_method_1d
+
+    ! Verlet method
+
+    SUBROUTINE verlet_method_1d (t0, x0, y0, delta_t, n, t, x, y)
+        REAL, INTENT(IN) :: t0, x0, y0, delta_t
+        INTEGER, INTENT(IN) :: n
+        REAL, DIMENSION(:), INTENT(OUT) :: t, x, y ! Dimension is n + 1
+        INTEGER :: i ! Looping index
+
+        ! Set initial condition
+        x(1) = x0
+        y(1) = y0
+        t(1) = t0
+
+        ! Approximate next steps with Verlet method
+        DO i = 1, n ! Repeat N times
+            t(i + 1) = t(i) + delta_t
+            y(i + 1) = y(i) + 0.5 * delta_t * fy(t(i), x(i), y(i))
+            x(i + 1) = x(i) + delta_t * y(i + 1)
+            y(i + 1) = y(i + 1) + 0.5 * delta_t * fy(t(i), x(i + 1), y(i + 1))            
+        END DO
+    END SUBROUTINE verlet_method_1d
+
+    ! TWO-DIMENSIONAL FUNCTION
+
+    ! Functions corresponding to the diff. equation system
+
+    REAL FUNCTION fx1(t, x1, x2, y1, y2) RESULT(res)
+        REAL, INTENT(IN) :: t, x1, x2, y1, y2 ! Function input
+        res = y1
+    END FUNCTION fx1
+
+    REAL FUNCTION fx2(t, x1, x2, y1, y2) RESULT(res)
+        REAL, INTENT(IN) :: t, x1, x2, y1, y2 ! Function input
+        res = y2
+    END FUNCTION fx2
+
+    REAL FUNCTION fy1(t, x1, x2, y1, y2) RESULT(res)
+        REAL, INTENT(IN) :: t, x1, x2, y1, y2 ! Function input
+        res = -1.0 * x1 / (SQRT(x1**2 + x2**2) ** 3)
+    END FUNCTION fy1
+
+    REAL FUNCTION fy2(t, x1, x2, y1, y2) RESULT(res)
+        REAL, INTENT(IN) :: t, x1, x2, y1, y2 ! Function input
+        res = -1.0 * x2 / (SQRT(x1**2 + x2**2) ** 3)
+    END FUNCTION fy2
+
+    ! Euler method
+
+    SUBROUTINE euler_method_2d (t0, x0, y0, delta_t, n, t, x, y)
+        REAL, INTENT(IN) :: t0, delta_t
+        REAL, DIMENSION(:), INTENT(IN) :: x0, y0
+        INTEGER, INTENT(IN) :: n
+        REAL, DIMENSION(:), INTENT(OUT) :: t
+        REAL, DIMENSION(:, :), INTENT(OUT) :: x, y
+        INTEGER :: i ! Looping index
+
+        ! Set initial condition
+        x(1, 1) = x0(1)
+        x(2, 1) = x0(2)
+        y(1, 1) = y0(1)
+        y(2, 1) = y0(2)
+        t(1) = t0
+
+        ! Apprximate next steps with Euler method
+        DO i = 1, n ! Repeat N times
+            t(i + 1) = t(i) + delta_t
+
+            x(1, i + 1) = x(1, i) + delta_t * fx1(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+            x(2, i + 1) = x(2, i) + delta_t * fx2(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+
+            y(1, i + 1) = y(1, i) + delta_t * fy1(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+            y(2, i + 1) = y(2, i) + delta_t * fy2(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+        END DO
+    END SUBROUTINE euler_method_2d
+
+    ! Verlet method
+
+    SUBROUTINE verlet_method_2d (t0, x0, y0, delta_t, n, t, x, y)
+        REAL, INTENT(IN) :: t0, delta_t
+        REAL, DIMENSION(:), INTENT(IN) :: x0, y0
+        INTEGER, INTENT(IN) :: n
+        REAL, DIMENSION(:), INTENT(OUT) :: t
+        REAL, DIMENSION(:, :), INTENT(OUT) :: x, y
+        INTEGER :: i ! Looping index
+
+        ! Set initial condition
+        x(1, 1) = x0(1)
+        x(2, 1) = x0(2)
+        y(1, 1) = y0(1)
+        y(2, 1) = y0(2)
+        t(1) = t0
+
+        ! Approximate next steps with Verlet method
+        DO i = 1, n ! Repeat N times
+            t(i + 1) = t(i) + delta_t
+
+            y(1, i + 1) = y(1, i) + 0.5 * delta_t * fy1(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+            y(2, i + 1) = y(2, i) + 0.5 * delta_t * fy2(t(i), x(1, i), x(2, i), y(1, i), y(2, i))
+
+            x(1, i + 1) = x(1, i) + delta_t * y(1, i + 1)
+            x(2, i + 1) = x(2, i) + delta_t * y(2, i + 1)
+
+            y(1, i + 1) = y(1, i + 1) + 0.5 * delta_t * fy1(t(i), x(1, i + 1), x(2, i + 1), y(1, i + 1), y(2, i + 1))
+            y(2, i + 1) = y(2, i + 1) + 0.5 * delta_t * fy2(t(i), x(1, i + 1), x(2, i + 1), y(1, i + 1), y(2, i + 1))            
+        END DO
+    END SUBROUTINE verlet_method_2d
+END MODULE diff_equation
