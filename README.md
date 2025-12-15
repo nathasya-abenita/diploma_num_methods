@@ -11,3 +11,7 @@ Cover Fortran90 scripts and additional Python scripts for plotting. Modules cove
 - Distributed Random Generator
 - Monte-Carlo Processes
 - Random Walk
+
+Notes relating to `.gitignore` file:
+- Make sure you have `output` folder.
+- The default executable file from compiled script should be `test`.
