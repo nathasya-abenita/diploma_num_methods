@@ -1,9 +1,9 @@
 PROGRAM solve_diff_equation
     USE diff_equation
     IMPLICIT NONE
-    REAL :: t0, x0, y0, tf, delta_t ! Initial conditions
+    REAL :: t0, x0, tf, delta_t ! Initial conditions
     INTEGER :: n, i ! Number of iterations, loop index
-    REAL, DIMENSION(:), ALLOCATABLE :: t, x, y ! Arrays of solution
+    REAL, DIMENSION(:), ALLOCATABLE :: t, x! Arrays of solution
     INTEGER :: unit_num = 11 ! Unit number to access file
     CHARACTER(LEN=11) :: num_format = '(2F10.4)'
     CHARACTER(LEN=11) :: head_format = '(2A10)'
@@ -15,7 +15,6 @@ PROGRAM solve_diff_equation
     ! Define initial conditions
     t0 = 0
     x0 = 1
-    y0 = 0
     delta_t = 1E-3
     tf = 10
 
@@ -23,10 +22,10 @@ PROGRAM solve_diff_equation
     n = INT((tf - t0) / delta_t) + 1
     
     ! Preparing output arrays
-    ALLOCATE(t(n + 1), x(n + 1), y(n + 1))
+    ALLOCATE(t(n + 1), x(n + 1))
 
     ! Perform Euler method
-    CALL euler_method_1d (t0, x0, y0, delta_t, n, t, x, y)
+    CALL euler_method_single_system (t0, x0, delta_t, n, t, x)
 
     ! Write the output
     OPEN(UNIT=unit_num, FILE='./exam_2024/euler.txt', STATUS='replace', ACTION='write')
