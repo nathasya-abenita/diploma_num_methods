@@ -14,7 +14,7 @@ x = np.linspace(0, 1, 10)
 plt.plot(x, 3 * x ** 2, label=r'$f(x)=3x^2$', color='darkorange')
 
 # Add labels and title
-plt.xlim(0, 1)
+plt.xlim(0, 1) # Remember to control x-limit!
 plt.legend()
 plt.xlabel("Value")
 plt.ylabel("Density")
