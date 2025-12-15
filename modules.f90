@@ -942,12 +942,16 @@ CONTAINS
 
     REAL FUNCTION fx(t, x, y) RESULT(res)
         REAL, INTENT(IN) :: t, x, y ! Function input
-        res = y
+        ! Define pi constant
+        REAL :: pi
+        pi = 4 * ATAN(1.0)
+        res = x * SQRT(8.0 * pi / (3.0 * x ** 3) - 1 / x ** 2)
     END FUNCTION fx
 
     REAL FUNCTION fy(t, x, y) RESULT(res)
         REAL, INTENT(IN) :: t, x, y ! Function input
-        res = -1.0 * SIN(x)
+
+        res = 0 !res = -1.0 * SIN(x)
     END FUNCTION fy
 
     ! Euler method
@@ -1149,3 +1153,138 @@ CONTAINS
         CLOSE(11)
     END SUBROUTINE write_output
 END MODULE random_numbers
+
+MODULE monte_carlo
+    USE random_numbers ! for gen_uniform
+    IMPLICIT NONE
+CONTAINS
+
+    ! FUNCTIONS
+
+    REAL FUNCTION func_f (x) RESULT(res) ! For rejection method
+        REAL, INTENT(IN) :: x
+
+        res = EXP(-1.0 * x)
+    END FUNCTION func_f
+
+    REAL FUNCTION func_g (x) RESULT(res) ! For crude Monte-Carlo method
+        REAL, INTENT(IN) :: x
+
+        res = x * EXP(-1.0 * x ** 2.0)
+    END FUNCTION func_g
+
+    REAL FUNCTION func_g2d (x, y) RESULT(res)
+        REAL, INTENT(IN) :: x, y
+
+        IF ( ( x** 2 + y**2 ) <= 1 ) THEN
+            res = 1
+        ELSE
+            res = 0
+        END IF
+    END FUNCTION func_g2d
+
+    ! GENERATE RANDOM NUMBERS AND MONTE-CARLO METHODS
+
+    SUBROUTINE generate_by_rejection (n, x_min, x_max, f_max, gen)
+        INTEGER, INTENT(IN) :: n
+        REAL, INTENT(IN) :: x_min, x_max, f_max
+        REAL, DIMENSION(:), INTENT(OUT) :: gen ! Size of n
+        REAL :: x ! x ~ U[x_min, x_max]
+        REAL :: prob, r ! Acceptance probability and r ~ U[0, 1]
+        INTEGER :: i = 1 ! Number of generated number
+
+        DO
+            ! Generate random number from U[x_min, x_max]
+            CALL gen_uniform(x, x_min, x_max)
+
+            ! Calculate acceptance of probability
+            prob = func_f(x) / f_max
+
+            ! Call random number from U[0, 1]
+            CALL RANDOM_NUMBER(r)
+
+            ! Check acceptance
+            IF (r <= prob) THEN
+                gen(i) = x
+                i = i + 1
+            END IF
+
+            ! Stop loop if n numbers have been generated
+            IF (i == (n + 1)) EXIT
+        END DO
+    END SUBROUTINE generate_by_rejection
+
+    SUBROUTINE integrate_by_hit_miss (n, a, b, f_max, area)
+        INTEGER, INTENT(IN) :: n
+        REAL, INTENT(IN) :: a, b, f_max
+        REAL, INTENT(OUT) :: area
+        REAL :: x, y ! Generated random number
+        INTEGER :: i, count
+
+        ! Initialize counter
+        count = 0
+
+        ! Perform trials
+        DO i = 1, n
+            ! Generate numbers
+            CALL gen_uniform(x, a, b)
+            CALL gen_uniform(y, 0.0, f_max)
+
+            ! Acceptance check
+            IF (y < func_f(x)) THEN
+                count = count + 1
+            END IF
+        END DO
+
+        ! Finalize area
+        area = count / REAL(n) * (b - a) * f_max
+    END SUBROUTINE integrate_by_hit_miss
+
+    SUBROUTINE integrate_by_monte_carlo (n, a, b, area)
+        INTEGER, INTENT(IN) :: n
+        REAL, INTENT(IN) :: a, b
+        REAL, INTENT(OUT) :: area
+        REAL :: x ! Generated random number
+        INTEGER :: i ! Looping index
+
+        ! Initialize area / integral output
+        area = 0
+
+        ! Perform trials
+        DO i = 1, n
+            ! Call random number
+            CALL gen_uniform(x, a, b)
+
+            ! Update area
+            area = area + func_g(x)
+        END DO
+
+        ! Finalize
+        area = area * (b - a) / n
+    END SUBROUTINE integrate_by_monte_carlo
+
+    SUBROUTINE integrate_by_monte_carlo_2d (n, x1, x2, y1, y2, vol)
+        INTEGER, INTENT(IN) :: n
+        REAL, INTENT(IN) :: x1, x2, y1, y2
+        REAL, INTENT(OUT) :: vol
+        REAL :: x, y ! Generated random number
+        INTEGER :: i ! Looping index
+
+        ! Initialize area / integral output
+        vol = 0
+
+        ! Perform trials
+        DO i = 1, n
+
+            ! Call random number
+            CALL gen_uniform(x, x1, x2)
+            CALL gen_uniform(y, y1, y2)
+
+            ! Update area
+            vol = vol + func_g2d(x, y)
+        END DO
+
+        ! Finalize
+        vol = vol * (x2 - x1) * (y2 - y1) / n
+    END SUBROUTINE integrate_by_monte_carlo_2d
+END MODULE monte_carlo
