@@ -206,7 +206,7 @@ CONTAINS
         n_row = 0
 
         ! Read data as matrix
-        CALL read_flexible_mat(file_name, mat, n_col, n_row)
+        CALL read_mat(file_name, mat, n_col, n_row)
 
         ! Make sure it's a vector data
         IF (n_col > 1) STOP 'Data is not one-dimensional!'
@@ -304,13 +304,13 @@ CONTAINS
         REAL(rpm), INTENT(IN) :: x
         ! f = x**5 + 3*x**4 - 2*x**2 - LOG(x**2) - 2
         ! f = COS(x) - LOG(x) + 1
-        f = x**2 - 6*x - LOG(x) - 4
+        f = x**3 - LOG(x) - x - 4! x**2 - 6*x - LOG(x) - 4
     END FUNCTION func_f
 
     REAL FUNCTION func_f_prime (x) RESULT(f)
         REAL(rpm), INTENT(IN) :: x
         ! f = -1.0 * SIN(x) - (1.0 / x) 
-        f = 2*x - 6 - 1/x
+        f = 3*x**2 - 1/x - 1 ! 2*x - 6 - 1/x
     END FUNCTION func_f_prime
 
     SUBROUTINE bisection (a, b, eps)
@@ -1088,6 +1088,17 @@ MODULE random_numbers
     USE matrix_operator
     IMPLICIT NONE
 CONTAINS
+    ! Call random number from dist. of U[a, b]
+    SUBROUTINE gen_uniform (x, a, b)
+        REAL, INTENT(INOUT) :: x
+        REAL, INTENT(IN) :: a, b
+
+        ! Generate a number from U[0, 1]
+        CALL RANDOM_NUMBER(x)
+        ! Shift to distribution of U[a, b]
+        x = a + (b - a) * x
+    END SUBROUTINE gen_uniform
+
     REAL FUNCTION inverse_cdf_1 (x) RESULT(res)
         REAL, INTENT(IN) :: x
 
