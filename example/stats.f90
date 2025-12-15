@@ -13,13 +13,7 @@ PROGRAM stats
 
     ! 1. Read data as matrix
     file_name = './data_sample/sample.dat'
-    CALL read_flexible(file_name, mat, n_col, n_row)
-
-    ! Store data in vector
-    ALLOCATE(vec(n_row))
-    DO i = 1, n_row
-        vec(i) = mat(i, 1)
-    END DO
+    CALL read_vec(file_name, vec, n_row)
 
     ! Compute mean
     avg = average(vec)

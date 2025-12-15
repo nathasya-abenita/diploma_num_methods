@@ -8,10 +8,11 @@ PROGRAM file_average
     INTEGER :: n_row! Number of rows
     REAL, DIMENSION(:, :), ALLOCATABLE :: mat
     REAL, DIMENSION(:), ALLOCATABLE :: output
+    CHARACTER(LEN=30) :: file_name
 
     ! Read file
     file_name = './data_sample/data.txt'
-    CALL read_flexible(file_name, mat, n_col, n_row)
+    CALL read_mat(file_name, mat, n_col, n_row)
 
     ! Compute output
     ALLOCATE(output(n_col))

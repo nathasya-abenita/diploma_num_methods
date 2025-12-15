@@ -193,7 +193,32 @@ END MODULE matrix_operator
 MODULE read_file
     IMPLICIT NONE
 CONTAINS
-    SUBROUTINE read_flexible (file_name, mat, n_col, n_row)
+    SUBROUTINE read_vec (file_name, vec, n_row)
+        INTEGER :: i
+        CHARACTER(LEN=*), INTENT(IN) :: file_name
+        REAL, DIMENSION(:,:), ALLOCATABLE :: mat
+        REAL, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: vec
+        INTEGER :: n_col
+        INTEGER, INTENT(OUT) :: n_row
+
+        ! Initialize number of rows and columns
+        n_col = 0
+        n_row = 0
+
+        ! Read data as matrix
+        CALL read_flexible_mat(file_name, mat, n_col, n_row)
+
+        ! Make sure it's a vector data
+        IF (n_col > 1) STOP 'Data is not one-dimensional!'
+
+        ! Save data as vector
+        ALLOCATE(vec(n_row))
+        DO i = 1, n_row
+            vec(i) = mat(i, 1)
+        END DO
+    END SUBROUTINE
+
+    SUBROUTINE read_mat (file_name, mat, n_col, n_row)
         CHARACTER(LEN=1) :: first_char
         CHARACTER(LEN=80) :: line
         INTEGER :: unit_num = 11
