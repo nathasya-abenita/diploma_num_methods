@@ -782,7 +782,7 @@ CONTAINS
         REAL, INTENT(IN) :: x
 
         ! res = (16*x - 16) / (x**4 - 2*x**3 + 4*x - 4)
-        res = SIN(x) * EXP(-1.0 * x)
+        res = SIN(x**2) ! SIN(x) * EXP(-1.0 * x)
     END FUNCTION f
 
     ! Gauss-Legendre quadrature method
@@ -940,6 +940,12 @@ CONTAINS
 
     ! Functions corresponding to the diff. equation system
 
+    REAL FUNCTION f(t, x) RESULT(res) ! Single system function
+        REAL, INTENT(IN) :: t, x
+
+        res = x ** 2 / (1 + t)
+    END FUNCTION f
+
     REAL FUNCTION fx(t, x, y) RESULT(res)
         REAL, INTENT(IN) :: t, x, y ! Function input
         ! Define pi constant
@@ -955,6 +961,23 @@ CONTAINS
     END FUNCTION fy
 
     ! Euler method
+
+    SUBROUTINE euler_method_single_system (t0, x0, delta_t, n, t, x)
+        REAL, INTENT(IN) :: t0, x0, delta_t
+        INTEGER, INTENT(IN) :: n
+        REAL, DIMENSION(:), INTENT(OUT) :: t, x ! Dimension is n + 1
+        INTEGER :: i ! Looping index
+
+        ! Set initial condition
+        x(1) = x0
+        t(1) = t0
+
+        ! Apprximate next steps with Euler method
+        DO i = 1, n ! Repeat N times
+            t(i + 1) = t(i) + delta_t
+            x(i + 1) = x(i) + delta_t * f(t(i), x(i))
+        END DO
+    END SUBROUTINE euler_method_single_system
 
     SUBROUTINE euler_method_1d (t0, x0, y0, delta_t, n, t, x, y)
         REAL, INTENT(IN) :: t0, x0, y0, delta_t
