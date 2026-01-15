@@ -5,7 +5,6 @@
 !===========================================================
 
 MODULE matrix_operator
-    USE module_sorter
     IMPLICIT NONE
 CONTAINS
     REAL FUNCTION average(arr) RESULT(avg)
